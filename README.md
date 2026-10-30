@@ -23,6 +23,7 @@ All IDs are shared across files: assets `E1–E11`/`S1–S22`, components `C1–
 
 Points: Egon 34 · Vesanja 37 · total 71. Task breakdown (27 tasks), branches and contribution log: `00-Delivery/CS301_Agile_Delivery_Templates_EPA_filled.docx`.
 Diagrams (`*.png`) are embedded in the documents and kept as separate files.
+`tools/` holds the Python scripts that generate all artefacts from one shared data model (`tools/data.py`), so IDs stay consistent: `pip install -r tools/requirements.txt`, then run `build_epa1.py`, `build_epa2.py`, `build_epa3.py`, `fill_template.py`. `00-Delivery/original/` is the unmodified lecturer template.
 
 ## Git workflow (each student commits their own tasks)
 
