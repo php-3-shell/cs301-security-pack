@@ -66,18 +66,18 @@ def trust_architecture(path):
     users = [("U1", "Students"), ("U2", "Lecturers"), ("U3", "Coordinators"), ("U4", "Admins")]
     for k, (u, n) in enumerate(users):
         comp(0.3, 6.4 - k * 1.25, u, n, w=1.8)
-    comp(2.6 + 0.1, 5.6, "C8", "Web portal\n+ WAF", w=1.7)
-    core = {"C4": ("Identity provider\n(SSO, MFA)", 5.0, 6.9), "C1": ("Student info\nsystem", 7.0, 6.9),
-            "C2": ("Grade DB", 5.0, 5.95), "C3": ("Research\nrepository", 7.0, 5.95),
-            "C7": ("Sensitive data\nstorage", 5.0, 5.0), "C5": ("MCP service\n(tools for agents)", 7.0, 4.0)}
+    comp(2.6 + 0.1, 5.6, "SYS-8", "Web portal\n+ WAF", w=1.7)
+    core = {"SYS-4": ("Identity provider\n(SSO, MFA)", 5.0, 6.9), "SYS-1": ("Student info\nsystem", 7.0, 6.9),
+            "SYS-2": ("Grade DB", 5.0, 5.95), "SYS-3": ("Research\nrepository", 7.0, 5.95),
+            "SYS-7": ("Sensitive data\nstorage", 5.0, 5.0), "SYS-5": ("MCP service\n(tools for agents)", 7.0, 4.0)}
     for cid, (n, x, y) in core.items(): comp(x, y, cid, n)
-    comp(6.9, 0.75, "C6", "Audit logging / SIEM\n(WORM)", w=1.9)
-    comp(4.9, 0.75, "S18", "Immutable\nbackups", w=1.7)
-    comp(2.8, 0.75, "PAM", "Admin jump host\n(VPN + FIDO2)", w=1.9)
-    comp(9.42, 4.6, "C9", "Secure API\ngateway –\nMetadata API", w=1.46, h=1.3, ec="#C00000")
-    ax.text(10.15, 3.55, "mTLS · OAuth2\nallow-list · DLP\nrate limit · audit", ha="center", fontsize=7.2, color="#C00000")
-    cloud = [("C10", "Agent orchestrator"), ("C11", "AI agents"), ("C12", "LLM inference"),
-             ("C13", "Vector DB"), ("C15", "Cloud storage (CMK)"), ("C16", "Reporting dashboard"), ("C14", "Cloud monitoring")]
+    comp(6.9, 0.75, "SYS-6", "Audit logging\n(tamper-proof)", w=1.9)
+    comp(4.9, 0.75, "S18", "Offline\nbackups", w=1.7)
+    comp(2.8, 0.75, "Admin access", "Jump host\n(VPN + MFA)", w=1.9)
+    comp(9.42, 4.6, "SYS-9", "Secure API\ngateway –\nMetadata API", w=1.46, h=1.3, ec="#C00000")
+    ax.text(10.15, 3.55, "mutual TLS · OAuth2\nfield allow-list\nrate limit · audit log", ha="center", fontsize=7.2, color="#C00000")
+    cloud = [("SYS-10", "Agent orchestrator"), ("SYS-11", "AI agents"), ("SYS-12", "LLM inference"),
+             ("SYS-13", "Vector DB"), ("SYS-15", "Cloud storage"), ("SYS-16", "Reporting dashboard"), ("SYS-14", "Cloud monitoring")]
     for k, (cid, n) in enumerate(cloud):
         comp(12.0, 6.95 - k * 0.98, cid, n, w=2.3, h=0.6)
     def flow(p, q, lab, color="#333333", rad=0.0, lp=0.5):
@@ -96,7 +96,7 @@ def trust_architecture(path):
     flow((5.95, 5.0), (5.75, 1.37), "F8", color="#3B4A8C", lp=0.55)
     flow((10.15, 3.4), (8.3, 1.37), "F9", color="#3B4A8C", lp=0.4)
     flow((2.1, 2.95), (3.3, 1.37), "F10", color="#3B4A8C", lp=0.6)
-    ax.text(0.15, 0.08, "No direct route: Z1 → databases · Z5 → Z2 · Internet → Z3.  Grades (C2) and research data (C3) never leave Z2.  "
+    ax.text(0.15, 0.08, "No direct route: Z1 → databases · Z5 → Z2 · Internet → Z3.  Grades (SYS-2) and research data (SYS-3) never leave Z2.  "
             "Arrows = permitted flows, see flow register F1–F10.", fontsize=8.4, color="#404040")
     fig.savefig(path, dpi=160, bbox_inches="tight"); plt.close(fig); print("diagram", os.path.relpath(path, OUT))
 

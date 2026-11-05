@@ -23,7 +23,7 @@ Story arc: *risk identified → controls designed → incident shows why they ma
 | Vulnerability | A weakness | Agent sees its own token in its context |
 | Risk | Possible harmful outcome = likelihood × impact | Bulk disclosure of student records (R1, 4×5 = 20) |
 | Impact | Consequence | GDPR breach, notification, loss of trust |
-| Control | Reduces risk | Short-lived tokens, least-privilege scopes (C02, C06) |
+| Control | Reduces risk | Short-lived tokens, least privilege (CTL-02, CTL-04) |
 
 Traps: *threat ≠ risk*. *Missing authentication* is a **vulnerability**, not a threat. A **root cause** explains *why* an event was possible. "Token theft" is an event, not a root cause.
 **CIA**: Confidentiality (only authorised people see it), Integrity (not changed without authorisation), Availability (usable when needed).
@@ -65,15 +65,15 @@ Traps: *threat ≠ risk*. *Missing authentication* is a **vulnerability**, not a
 ## EPIC 2 – Protect
 
 ### US-2.1 Authenticate component communication (Vesanja)
-**What we did:** listed 10 communication paths (CC1–CC10). Chose **mTLS** (both sides prove identity), **OAuth2 client credentials with 5-minute tokens bound to the certificate**, **on-behalf-of tokens** carrying the end user, and **FIDO2 MFA** for staff.
-1. **Risk reduced:** R2 (unauthenticated API), R1 (stolen token is useless after 5 minutes or from another machine), R3 (on-behalf-of lets MCP check the real user).
-2. **Assumption:** the cloud supports workload identity and private connectivity. The identity provider is well protected.
+**What we did:** listed 10 communication paths (CC1–CC10). Chose **mutual TLS** (both sides prove their identity with a certificate), **OAuth2 with tokens valid for only 5 minutes**, agent requests that **carry the user's identity**, and **MFA** (security keys for staff). File: `A2-1_Secure_API_Authentication.docx`.
+1. **Risk reduced:** R2 (unauthenticated API), R1 (stolen token is useless after 5 minutes or from another machine), R3 (the user's identity in the request lets MCP check the real user's rights).
+2. **Assumption:** the cloud supports a certificate per agent and private network connections. The identity provider is well protected.
 3. **If it fails:** identity provider down → fail closed (AI features stop, the on-prem portal still works). Certificate expiry → outage, so automatic rotation and alerts.
 4. **Rejected:** static API keys (long-lived and shared, exactly what made the incident possible). IP allow-lists alone (an IP isn't an identity). SMS codes (phishable).
-5. **Residual:** if the whole cloud host is taken over, the attacker can use the token until it's revoked. Damage is capped by scopes, quotas and alerts.
+5. **Residual:** if the whole cloud host is taken over, the attacker can use the token until it's revoked. Damage is capped by narrow rights, quotas and alerts.
 
 ### US-2.2 Secure metadata transfer (Egon)
-**What we did:** a data classification with a clear rule for what may cross to the cloud. Grades, names and research data **never** do. Only allow-listed fields pass, with **keyed pseudonyms** (HMAC, key stays on-prem) and **k-anonymity ≥ 10** for aggregates. Every request is logged without payloads, and alerts fire on volume (> 500 records/h).
+**What we did:** a data classification with a clear rule for what may cross to the cloud. Grades, names and research data **never** do. Only allow-listed fields pass. Student IDs are replaced by **pseudonyms** (created with a secret key that stays on-prem), and statistics are only shown for **groups of 10 or more**. File: `A2-4_Secure_Metadata_Transfer.docx`. Every request is logged without payloads, and alerts fire on volume (> 500 records/h).
 1. **Risk reduced:** R5 (over-sharing / GDPR data minimisation), R2, R3, plus detection for R1.
 2. **Assumption:** lecturers mark materials approved for AI. The cloud can't reverse the pseudonyms because it never gets the key.
 3. **If it fails:** a wrong filter rule could over-share. Filter-hit monitoring and quarterly data-flow review catch it.
@@ -81,10 +81,10 @@ Traps: *threat ≠ risk*. *Missing authentication* is a **vulnerability**, not a
 5. **Residual:** pseudonymised data can sometimes be re-identified by combining it with other data.
 
 ### US-2.3 Trust zones and layered architecture (Efe)
-**What we did:** 6 zones (Z0–Z5), a flow register (F1–F10) where *everything else is blocked*, 7 defence-in-depth layers with preventive/detective/corrective controls, failure paths for each single point of failure, and a control matrix (C01–C30) with a risk × control coverage check.
+**What we did:** 6 zones (Z0–Z5), a flow register (F1–F10) where *everything else is blocked*, 7 defence-in-depth layers with preventive/detective/corrective controls, failure paths for each single point of failure, and a control matrix (CTL-01–CTL-16) with a risk × control coverage check.
 1. **Risk reduced:** contains a compromise. A fully compromised cloud zone still has no route into the core (R1, R2, R9).
 2. **Assumption:** network rules are enforced as drawn. There's no hidden extra route between cloud and core (A3).
-3. **If one layer fails:** the next layer still limits damage. Example: the gateway is bypassed, but MCP re-checks every token and object.
+3. **If one layer fails:** the next layer still limits damage. Example: the gateway is bypassed, but MCP re-checks every token and record.
 4. **Rejected:** a flat network trusting anything "internal". One foothold would reach everything.
 5. **Residual:** the identity provider and gateway are critical dependencies. They're heavily protected but remain high-value targets.
 
@@ -102,7 +102,7 @@ Traps: *threat ≠ risk*. *Missing authentication* is a **vulnerability**, not a
 5. **Residual uncertainty:** whether the attacker kept the data. We assume yes for notification.
 
 ### US-3.2 Determine root causes (Egon)
-**Root causes:** RC1 secrets visible to the model, plus long-lived unbound tokens. RC2 excessive agent rights. RC3 untrusted content treated as instructions. RC4 over-exposed legacy endpoint. RC5 no quotas or security alerts. RC6 unrestricted internet egress. Contributing factors: no security review of agent configuration, pilot endpoint never removed, no training, no owner.
+**Root causes:** RC1 the token was visible to the AI and valid for 30 days. RC2 excessive agent rights. RC3 untrusted content treated as instructions. RC4 over-exposed legacy endpoint. RC5 no quotas or security alerts. RC6 unrestricted internet egress. Contributing factors: no security review of agent configuration, pilot endpoint never removed, no training, no owner.
 **Method:** five whys, then mapping each cause to the missing controls from the control matrix.
 1. **Risk:** R1 and R5. It explains *why* the risk materialised.
 2. **Assumption:** the uploader's account wasn't compromised. This is still open, so it's recorded as uncertain.
@@ -124,6 +124,6 @@ Traps: *threat ≠ risk*. *Missing authentication* is a **vulnerability**, not a
 
 - *Why is the cloud "untrusted" if MUDT pays for it?* We don't control its staff, hardware or other tenants, and agents process untrusted text. So we assume compromise and minimise what it holds.
 - *Encryption vs authentication?* Encryption keeps data secret in transit. Authentication proves who is talking. TLS without client authentication still accepts anyone.
-- *Why short-lived tokens if we have mTLS?* Defence in depth. A token alone is useless without the key, and expires in 5 minutes even if both leak.
+- *Why short-lived tokens if we already have mutual TLS?* Defence in depth. A stolen token alone is useless without the certificate, and it expires after 5 minutes even if both leak.
 - *Mitigation vs remediation?* Mitigation reduces the immediate damage (revoke the token). Remediation removes the cause (redesign the token handling).
 - *How does this map to NIST CSF?* Govern/Identify = Epic 1, Protect = Epic 2, Detect/Respond/Recover = Epic 3. Every control in A2-3 has its CSF function.

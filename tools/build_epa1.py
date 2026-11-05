@@ -1,4 +1,4 @@
-"""EPA-IS-1 Assess: risk concept map + threat model (docx), asset register (xlsx), risk register (xlsx)."""
+"""EPA-IS-1 Assess: risk concept map (docx), asset register (xlsx), risk register (xlsx), threat model (docx)."""
 import os
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image as XLImage
@@ -13,33 +13,39 @@ LVL = {1: "Low", 2: "Medium", 3: "High"}
 
 # ------------------------------------------------------------------ diagrams
 CHAINS = [
-    ("cm_R2", "Concept map 1 (Workshop 1) – unauthenticated Metadata API", "TA1 External attacker",
-     "Missing authentication on the Metadata API (C9)", "E5 Student analytics / learning metadata (via C9 Metadata API)",
+    ("A1-1_cm_R2", "Concept map 1 (Workshop 1) – unauthenticated Metadata API", "TA1 External attacker",
+     "Missing authentication on the Metadata API (SYS-9)", "E5 Student analytics / learning metadata (via SYS-9 Metadata API)",
      "Unauthorised access to learning data", "Data disclosure, GDPR consequences, loss of trust (E11)",
-     "C02 OAuth2 client credentials + C01 mTLS", "R2"),
-    ("cm_R1", "Concept map 2 – AI agent manipulated by prompt injection", "TA3 Prompt injector (hidden text in uploaded document)",
-     "Agent treats retrieved text as instructions; excessive tool rights; token visible to model",
+     "CTL-02 OAuth2 authentication + CTL-01 mutual TLS", "R2"),
+    ("A1-4_cm_R1", "Concept map 2 – AI agent manipulated by prompt injection", "TA3 Prompt injector (hidden text in uploaded document)",
+     "Agent treats retrieved text as instructions; too many rights; token visible to the AI",
      "E1 Student personal data, E4 learning records, E8 agent token",
      "Bulk disclosure of student records through the agent", "Mass GDPR breach, 72 h notification, loss of trust",
-     "C06 least-privilege agent scopes, C10 injection defences, C09 rate limits", "R1"),
-    ("cm_R3", "Concept map 3 – agent as confused deputy for grades", "TA2 Curious student",
-     "MCP service does not check for which user the agent asks (no object-level authorisation)",
+     "CTL-04 least privilege, CTL-07 AI agent safeguards, CTL-06 rate limits", "R1"),
+    ("A1-4_cm_R3", "Concept map 3 – student misuses the agent to read grades", "TA2 Curious student",
+     "MCP service does not check for which user the agent asks (no per-record access check)",
      "E2 Grades and assessment records",
      "Student reads other students' grades", "Privacy breach between students, complaints, GDPR breach",
-     "C03 on-behalf-of tokens + C05 object-level checks", "R3"),
+     "CTL-04 role-based access: requests carry the user's identity, every record is checked", "R3"),
 ]
 for key, title, t, v, a, r, i, c, rid in CHAINS:
-    D.concept_map(os.path.join(F, f"A1-1_{key}.png"), title, t, v, a, r, i, c, rid)
+    D.concept_map(os.path.join(F, f"{key}.png"), title, t, v, a, r, i, c, rid)
 D.heat_map(os.path.join(F, "A1-3_risk_heat_map.png"))
 
-# ------------------------------------------------------------------ A1-1 docx
-d = new_doc("Risk Concept Map and Threat Model", "System context, risk concept chains, threat actors, entry points and attack paths",
-            "A1-1", "US-1.1 (system context, concept map) · US-1.2 (threat model)", f"{who(EFE)} – system context, concept map (US-1.1); {who(VESANJA)} – threat model (US-1.2)")
+def concept_maps(d, chains):
+    for key, title, *_, rid in chains:
+        d.add_heading(title, 2)
+        image(d, os.path.join(F, f"{key}.png"), 16.5)
+        r = get(RISKS, rid)
+        para(d, f"60-second explanation: {r[1]} The threat is '{r[2]}', not the risk itself. The vulnerability is: {r[3].lower()}. "
+                f"Inherent rating L{r[6]} × I{r[8]} = {r[6]*r[8]} ({priority(r[6]*r[8])}). Treatment: {r[11]}.", size=9.5)
 
-d.add_heading("1. Purpose and how to read this artefact", 1)
-para(d, "This artefact answers two questions for the MUDT platform: (1) what are we protecting and how do the six risk concepts "
-        "(asset, threat, vulnerability, risk, impact, control) connect, and (2) who could attack the platform, where could they get in "
-        "and which path would lead them to the valuable assets. It is the starting point for the asset register (A1-2) and the risk register (A1-3).")
+# ------------------------------------------------------------------ A1-1 docx (US-1.1)
+d = new_doc("Risk Concept Map", "System context and the risk concept chain applied to the MUDT platform",
+            "A1-1", "US-1.1 Identify critical assets", f"{who(EFE)}; reviewed by {who(EGON)}")
+d.add_heading("1. Purpose", 1)
+para(d, "This artefact answers: what are we protecting, and how do the six risk concepts connect? "
+        "It is the starting point for the asset register (A1-2), the threat model (A1-4) and the risk register (A1-3).")
 bullets(d, ["**Asset** – something valuable (information, service, reputation).",
             "**Threat** – a potential cause of harm (an actor or an event).",
             "**Vulnerability** – a weakness that a threat can exploit.",
@@ -47,53 +53,59 @@ bullets(d, ["**Asset** – something valuable (information, service, reputation)
             "**Impact** – the consequence for the organisation if the risk happens.",
             "**Control** – a measure that reduces likelihood or impact.",
             "Rule from the lecture: Threat ≠ Risk, and 'missing authentication' is a vulnerability, not a threat."])
-
 d.add_heading("2. System context (architecture evidence)", 1)
 para(d, "Source: CS301 Session 1, slides 5 and 8 (MUDT AI Learning Assistant Platform architecture and use cases). "
         "The platform is split into three zones: an on-premises university data centre (trusted), a cloud AI platform (untrusted) "
         "and a controlled bridge – the Metadata API – that may only transfer approved reporting data.")
 d.add_heading("2.1 Components", 2)
-table(d, ["ID", "Component", "Zone", "Purpose"], COMPONENTS, widths=(1.2, 5.5, 1.3, 9.0))
+table(d, ["ID", "Component", "Zone", "Purpose"], COMPONENTS, widths=(1.4, 5.4, 1.3, 8.9))
 d.add_heading("2.2 Trust zones", 2)
 table(d, ["ID", "Zone", "Trust level", "Content"], ZONES, widths=(1.2, 4.3, 3.5, 8.0))
 d.add_heading("2.3 Users and use cases", 2)
 table(d, ["ID", "User group", "Main use cases"], USERS, widths=(1.2, 4.3, 11.5))
-para(d, "The full trust-zone diagram is in EPA-IS-2/A2-2_Trust_Architecture.docx; it is reused there for control design.", italic=True)
+para(d, "The full trust-zone diagram is in EPA-IS-2/A2-2_Trust_Architecture.docx.", italic=True)
 d.add_heading("2.4 Assumptions", 2)
 table(d, ["ID", "Assumption (to be confirmed with MUDT)"], ASSUMPTIONS, widths=(1.2, 15.8))
-
-d.add_heading("3. Risk concept maps", 1)
-para(d, "Each map follows the chain from the lecture (slides 20–22): a threat exploits a vulnerability that exists in an asset; "
+d.add_heading("3. Risk concept map", 1)
+para(d, "The map follows the chain from the lecture (slides 20–22): a threat exploits a vulnerability that exists in an asset; "
         "together they create a risk, which leads to an impact; a control reduces the risk by closing or limiting the vulnerability. "
-        "Map 1 is the Workshop 1 scenario; maps 2 and 3 apply the same chain to the AI-specific risks with the highest scores.")
-for key, title, *_ , rid in CHAINS:
-    d.add_heading(title, 2)
-    image(d, os.path.join(F, f"A1-1_{key}.png"), 16.5)
-    r = get(RISKS, rid)
-    para(d, f"60-second explanation: {r[1]} The threat is '{r[2]}', not the risk itself. The vulnerability is: {r[3].lower()}. "
-            f"Inherent rating L{r[6]} × I{r[8]} = {r[6]*r[8]} ({priority(r[6]*r[8])}). Treatment: {r[11]}.", size=9.5)
+        "This is the Workshop 1 scenario. The threat model (A1-4) applies the same chain to the two highest AI-specific risks.")
+concept_maps(d, CHAINS[:1])
+d.add_heading("4. Cross-references", 1)
+bullets(d, ["Asset IDs E1–E11 and S1–S22 → EPA-IS-1/A1-2_Asset_Register.xlsx",
+            "Threat actors, attack paths and concept maps 2–3 → EPA-IS-1/A1-4_Threat_Model.docx",
+            "Risk IDs R1–R12 → EPA-IS-1/A1-3_Risk_Register.xlsx",
+            "Control IDs CTL-01–CTL-16 → EPA-IS-2/A2-3_Control_Matrix.xlsx"])
+save_doc(d, "EPA-IS-1/A1-1_Risk_Concept_Map.docx")
 
-d.add_heading("4. Threat model (US-1.2)", 1)
-d.add_heading("4.1 Threat actors and goals", 2)
+# ------------------------------------------------------------------ A1-4 docx (US-1.2)
+d = new_doc("Threat Model", "Threat actors, entry points, trust boundaries and attack paths", "A1-4",
+            "US-1.2 Identify threats and attack paths", f"{who(VESANJA)}; reviewed by {who(EFE)}")
+d.add_heading("1. Purpose", 1)
+para(d, "This artefact answers: who could attack the MUDT platform, where could they get in, and which path would lead them to the "
+        "valuable assets? It uses the components (SYS-1–SYS-16), zones (Z0–Z5) and assets (E1–E11) from A1-1 and A1-2.")
+d.add_heading("2. Threat actors and goals", 1)
 table(d, ["ID", "Actor", "Motivation", "Goals", "Capability", "Targeted assets"], ACTORS, widths=(1.1, 3.4, 2.4, 5.6, 2.2, 2.3))
-d.add_heading("4.2 Entry points", 2)
+d.add_heading("3. Entry points", 1)
 table(d, ["ID", "Entry point", "Crosses", "Used by"], ENTRY_POINTS, widths=(1.2, 9.0, 3.0, 3.8))
-d.add_heading("4.3 Trust boundaries", 2)
+d.add_heading("4. Trust boundaries", 1)
 table(d, ["ID", "Boundary", "Zones", "Required enforcement"], BOUNDARIES, widths=(1.2, 4.6, 3.2, 8.0))
-note(d, "TB5 is special for AI systems: it is not a network boundary but the boundary between data and instructions inside the LLM context. "
-        "Every text an agent reads (uploaded documents, retrieved chunks, user prompts) is untrusted input.")
-d.add_heading("4.4 Attack paths", 2)
+note(d, "TB5 is special for AI systems: it is not a network boundary but the boundary between data and instructions inside the AI model. "
+        "Every text an agent reads (uploaded documents, retrieved text, user prompts) is untrusted input.")
+d.add_heading("5. Attack paths", 1)
 para(d, "Attack paths connect an actor through an entry point and a (suspected) weakness to an affected asset. "
         "They are hypotheses for planning controls – they do not claim that the weakness is confirmed (assumption A6).", italic=True)
 rows = [(a[0], a[1], a[2], a[3], "\n".join(f"{k+1}. {s}" for k, s in enumerate(a[4])), a[5], a[6], a[7]) for a in ATTACK_PATHS]
 table(d, ["ID", "Path", "Actor", "Entry", "Steps", "Assumed weakness", "Assets", "Risks"], rows,
       widths=(1.0, 2.6, 1.3, 1.3, 5.0, 3.0, 1.4, 1.4), font=8)
-d.add_heading("5. Cross-references", 1)
-bullets(d, ["Asset IDs E1–E11 and S1–S22 → EPA-IS-1/A1-2_Asset_Register.xlsx",
-            "Risk IDs R1–R12 → EPA-IS-1/A1-3_Risk_Register.xlsx",
-            "Control IDs C01–C29 → EPA-IS-2/A2-3_Control_Matrix.xlsx",
-            "AP1 is the attack that is later investigated as incident INC-2026-001 → EPA-IS-3"])
-save_doc(d, "EPA-IS-1/A1-1_Risk_Concept_Map_and_Threat_Model.docx")
+d.add_heading("6. Concept maps for the top attack paths", 1)
+para(d, "The same chain as in A1-1, applied to AP1 (prompt injection, risk R1) and AP3 (agent misused to read grades, risk R3).")
+concept_maps(d, CHAINS[1:])
+d.add_heading("7. Cross-references", 1)
+bullets(d, ["Assets → EPA-IS-1/A1-2_Asset_Register.xlsx · Risks → EPA-IS-1/A1-3_Risk_Register.xlsx",
+            "Controls CTL-01–CTL-16 → EPA-IS-2/A2-3_Control_Matrix.xlsx",
+            "AP1 is the attack later investigated as incident INC-2026-001 → EPA-IS-3"])
+save_doc(d, "EPA-IS-1/A1-4_Threat_Model.docx")
 
 # ------------------------------------------------------------------ A1-2 asset register
 wb = Workbook()
@@ -111,7 +123,7 @@ sheet(wb, "Method", ["Item", "Explanation"], [
     ("CIA scale", "Low = limited harm; Medium = noticeable harm to students or operations; High = legal breach, serious harm or loss of academic trust."),
     ("Overall criticality", "Highest of the three CIA values."),
     ("Asset owner", "Role accountable for the asset. Names to be confirmed with MUDT during product discovery."),
-    ("Architecture evidence", "Components C1–C16 and zones Z0–Z5 from Session 1 slide 5; see A1-1 section 2."),
+    ("Architecture evidence", "Components SYS-1–SYS-16 and zones Z0–Z5 from Session 1 slide 5; see A1-1 section 2."),
     ("Assumptions", "; ".join(f"{a[0]}: {a[1]}" for a in ASSUMPTIONS)),
 ], [24, 120], title="A1-2 Method, scales and assumptions", meta=meta)
 save_wb(wb, "EPA-IS-1/A1-2_Asset_Register.xlsx")

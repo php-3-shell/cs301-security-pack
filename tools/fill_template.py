@@ -6,37 +6,37 @@ from common import *
 SRC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "00-Delivery", "original", "CS301_Agile_Delivery_Templates_EPA_original.docx")
 E, V, F = who(EGON), who(VESANJA), who(EFE)
 P1, P2, P3 = "EPA-IS-1/", "EPA-IS-2/", "EPA-IS-3/"
-CM, AR, RR = P1 + "A1-1_Risk_Concept_Map_and_Threat_Model.docx", P1 + "A1-2_Asset_Register.xlsx", P1 + "A1-3_Risk_Register.xlsx"
-API, TA, CMX = P2 + "A2-1_Secure_API_Design.docx", P2 + "A2-2_Trust_Architecture.docx", P2 + "A2-3_Control_Matrix.xlsx"
+CM, AR, RR, TM = P1 + "A1-1_Risk_Concept_Map.docx", P1 + "A1-2_Asset_Register.xlsx", P1 + "A1-3_Risk_Register.xlsx", P1 + "A1-4_Threat_Model.docx"
+API, TA, CMX, MT = P2 + "A2-1_Secure_API_Authentication.docx", P2 + "A2-2_Trust_Architecture.docx", P2 + "A2-3_Control_Matrix.xlsx", P2 + "A2-4_Secure_Metadata_Transfer.docx"
 TL, RC, RM = P3 + "A3-1_Incident_Timeline.xlsx", P3 + "A3-2_Root_Cause_Review.docx", P3 + "A3-3_Remediation_Roadmap.xlsx"
 
 # story: (owner, reviewer, branch, evidence, [task descriptions], [task evidence])
 STORIES = {
-    "US-1.1": (F, E, "feature/us-1-1-assets", f"{CM} (§2, §3); {AR}",
+    "US-1.1": (F, E, "feature/us-1-1-assets", f"{CM}; {AR}",
                ["Analyse lecture architecture (slides 5, 8): list components, zones, users, assumptions",
                 "Build asset register: essential/supporting assets, CIA ratings with justification, owners; draw concept map 1",
                 "Review: check asset IDs vs architecture and risk register, CIA consistency"],
-               [CM + " §2", AR, AR]),
-    "US-1.2": (V, F, "feature/us-1-2-threat-model", f"{CM} (§4)",
+               [CM + " §2", AR + "; " + CM + " §3", AR]),
+    "US-1.2": (V, F, "feature/us-1-2-threat-model", TM,
                ["Identify threat actors, goals, entry points and trust boundaries",
                 "Write attack paths AP1–AP8 and concept maps 2–3",
                 "Review: attack paths link to assets/risks; no unverified vulnerability claims"],
-               [CM + " §4.1–4.3", CM + " §4.4", CM]),
+               [TM + " §2–4", TM + " §5–6", TM]),
     "US-1.3": (E, V, "feature/us-1-3-risk-register", RR,
                ["Write risk statements R1–R12 (threat + vulnerability + asset + impact)",
                 "Score L × I with rationale, set priority, initial treatment; heat map",
                 "Review: consistent scoring, cross-reference to controls A2-3"],
                [RR, RR, RR]),
-    "US-2.1": (V, F, "feature/us-2-1-authentication", f"{API} (§2–4, §7); {CMX}",
+    "US-2.1": (V, F, "feature/us-2-1-authentication", f"{API}; {CMX}",
                ["List communicating components CC1–CC10 and trust relationships",
-                "Design authentication (mTLS, OAuth2, OBO, MFA) and authorisation scopes; failure conditions",
-                "Review: design matches control matrix C01–C06"],
-               [API + " §2", API + " §3–4, §7", CMX]),
-    "US-2.2": (E, V, "feature/us-2-2-metadata-transfer", f"{API} (§5–6, §8); {CMX}",
+                "Design authentication (mutual TLS, OAuth2, MFA) and role-based access; failure conditions",
+                "Review: design matches control matrix CTL-01–CTL-04"],
+               [API + " §2", API + " §3–5", API + " §6; " + CMX]),
+    "US-2.2": (E, V, "feature/us-2-2-metadata-transfer", f"{MT}; {CMX}",
                ["Classify data; define allowed/prohibited data across the bridge",
                 "Specify endpoints, confidentiality/integrity controls, logging and alerts",
                 "Review: allow-list vs asset register; assumptions and alternatives recorded"],
-               [API + " §5.1", API + " §5–6", API + " §8"]),
+               [MT + " §2", MT + " §3–5", MT + " §6"]),
     "US-2.3": (F, E, "feature/us-2-3-trust-architecture", f"{TA}; {CMX}",
                ["Define trust zones Z0–Z5 and flow register F1–F10",
                 "Draw trust architecture; map preventive/detective/corrective controls per layer; build control matrix",

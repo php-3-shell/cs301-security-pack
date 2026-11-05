@@ -1,4 +1,4 @@
-"""EPA-IS-2 Protect: secure API design (docx), trust architecture (docx), control matrix (xlsx)."""
+"""EPA-IS-2 Protect: secure API authentication (docx), trust architecture (docx), control matrix (xlsx), secure metadata transfer (docx)."""
 import os
 from openpyxl import Workbook
 from common import *
@@ -8,134 +8,141 @@ import diagrams as D
 F = os.path.join(OUT, "EPA-IS-2")
 os.makedirs(F, exist_ok=True)
 
-# ================================================================== A2-1 Secure API design
-d = new_doc("Secure Metadata API Design", "Authenticated component communication and protected metadata transfer across the on-prem ↔ cloud boundary",
-            "A2-1", "US-2.1 Authenticate component communication · US-2.2 Secure metadata transfer",
-            f"{who(VESANJA)} – authentication (US-2.1); {who(EGON)} – metadata transfer (US-2.2)")
-
+# ================================================================== A2-1 Secure API design – authentication (US-2.1)
+d = new_doc("Secure API Design – Authentication", "Who may talk to whom across the on-prem ↔ cloud boundary, and how they prove it",
+            "A2-1", "US-2.1 Authenticate component communication", f"{who(VESANJA)}; reviewed by {who(EFE)}")
 d.add_heading("1. Design goal", 1)
-para(d, "The Metadata API (C9) is the only bridge between the trusted on-premises core (Z2) and the untrusted cloud AI zone (Z5). "
-        "The design must ensure that (a) only known, authenticated components talk to each other, (b) every request is authorised for "
-        "a specific purpose and – where relevant – for a specific end user, and (c) only approved, minimised data crosses the boundary. "
-        "Main risks addressed: R1 (prompt-injected agent), R2 (unauthenticated API), R3 (confused deputy), R5 (over-sharing).")
-para(d, "Design principles: zero trust between zones · deny by default · least privilege · data minimisation (GDPR Art. 5) · "
-        "defence in depth · fail closed · everything logged.", italic=True)
+para(d, "The Metadata API (SYS-9) is the only bridge between the trusted on-premises core (Z2) and the untrusted cloud AI zone (Z5). "
+        "This design makes sure that only known components talk to each other, and that every request is allowed for a specific purpose "
+        "and – where relevant – for a specific user. Main risks addressed: R1 (manipulated AI agent), R2 (unauthenticated API), "
+        "R3 (agent misused to read other students' grades). What data may cross the bridge is defined in A2-4.")
+para(d, "Principles: zero trust between zones · deny by default · least privilege · defence in depth · fail closed · everything logged.", italic=True)
 
-d.add_heading("2. Communicating components and trust relationships (US-2.1 AC1)", 1)
+d.add_heading("2. Communicating components and trust relationships (AC1)", 1)
 CC = [
-    ("CC1", "User browser → Web portal (C8)", "Z0 → Z1", "None (untrusted)", "HTTPS TLS 1.3 via WAF; OIDC login at C4; MFA (FIDO2 for staff)"),
-    ("CC2", "Web portal (C8) → SIS/Grades/Storage (C1, C2, C7)", "Z1 → Z2", "Portal service identity trusted for user-scoped reads", "mTLS + DB service account per function; user identity passed and checked"),
-    ("CC3", "Agent orchestrator / agents (C10, C11) → Metadata API (C9)", "Z5 → Z4", "Low – cloud is untrusted", "mTLS (client cert per workload) + OAuth2 client credentials; sender-constrained 5-min token"),
-    ("CC4", "Agent acting for a user → Metadata API (C9)", "Z5 → Z4", "Low; must prove user context", "OAuth2 token exchange (on-behalf-of): token contains user ID + agent ID; scope narrowed"),
-    ("CC5", "Metadata API (C9) → MCP service (C5)", "Z4 → Z2", "Medium – gateway is controlled by MUDT", "mTLS with gateway certificate; MCP re-validates token, scope and user (no implicit trust)"),
-    ("CC6", "MCP service (C5) → SIS / Grade DB / Storage", "Z2 internal", "High", "Read-only DB views per tool; separate service account per tool; no write rights"),
-    ("CC7", "Reporting dashboard (C16) ← Metadata API (C9)", "Z4 → Z5", "Low", "Pull via OAuth2 client credentials, scope report:read-aggregates only"),
-    ("CC8", "Agents → LLM inference / vector DB (C12, C13)", "Z5 internal", "Low", "Cloud workload identity (IAM role), private endpoints, no public access"),
-    ("CC9", "All components → Audit logging (C6)", "all → Z3", "Write-only", "TLS; append-only ingestion; components cannot read or delete logs"),
-    ("CC10", "Administrators → servers / cloud console", "Z0 → Z3", "High privilege", "VPN + FIDO2 MFA + PAM jump host; just-in-time rights; session recording"),
+    ("CC1", "User browser → Web portal (SYS-8)", "Z0 → Z1", "None (untrusted)", "HTTPS (TLS 1.3) through a web application firewall; single sign-on at SYS-4 with MFA"),
+    ("CC2", "Web portal (SYS-8) → student systems (SYS-1, SYS-2, SYS-7)", "Z1 → Z2", "Portal trusted only for the logged-in user's data", "Mutual TLS; one service account per function; the user's identity is passed on and checked"),
+    ("CC3", "AI agents (SYS-10, SYS-11) → Metadata API (SYS-9)", "Z5 → Z4", "Low – cloud is untrusted", "Mutual TLS (certificate per agent) + OAuth2 token valid for 5 minutes"),
+    ("CC4", "Agent acting for a user → Metadata API (SYS-9)", "Z5 → Z4", "Low; must prove which user it works for", "The OAuth2 token contains both the agent and the user; only that user's rights apply"),
+    ("CC5", "Metadata API (SYS-9) → MCP service (SYS-5)", "Z4 → Z2", "Medium – gateway is run by MUDT", "Mutual TLS; MCP checks token, rights and user again (no blind trust)"),
+    ("CC6", "MCP service (SYS-5) → databases", "Z2 internal", "High", "Read-only access per tool; separate service account per tool; no write rights"),
+    ("CC7", "Reporting dashboard (SYS-16) ← Metadata API (SYS-9)", "Z4 → Z5", "Low", "OAuth2 token that may only read aggregated reports"),
+    ("CC8", "Agents → AI model / vector DB (SYS-12, SYS-13)", "Z5 internal", "Low", "Cloud identity per workload; private network endpoints; no public access"),
+    ("CC9", "All components → audit logging (SYS-6)", "all → Z3", "Write-only", "TLS; components can write logs but never read or delete them"),
+    ("CC10", "Administrators → servers / cloud console", "Z0 → Z3", "High privilege", "VPN + MFA + admin jump host; admin rights only when needed; sessions recorded"),
 ]
-table(d, ["ID", "Communication", "Zones", "Trust relationship", "Authentication mechanism"], CC, widths=(1.1, 4.6, 1.7, 3.8, 5.8), font=8.5)
+table(d, ["ID", "Communication", "Zones", "Trust relationship", "Authentication"], CC, widths=(1.1, 4.6, 1.7, 3.8, 5.8), font=8.5)
 
-d.add_heading("3. Authentication decisions and justification (US-2.1 AC2)", 1)
+d.add_heading("3. Authentication decisions and justification (AC2)", 1)
 table(d, ["Decision", "Why (risk reduced)", "Rejected alternative and reason"], [
-    ("Mutual TLS on every cross-zone call (C01)", "Both sides prove identity with certificates; stops unknown callers and man-in-the-middle (R2).",
-     "Server-only TLS: encrypts but does not identify the client. IP allow-list only: IPs in cloud change and do not prove identity."),
-    ("OAuth2 client credentials, 5-minute tokens, audience-bound, bound to the mTLS certificate (C02)",
-     "A stolen token expires quickly and cannot be used from another machine without the private key (R1, R2).",
-     "Static API keys: long-lived, shared, cannot be scoped per agent – exactly what made the token theft in AP1 useful."),
-    ("Token exchange on-behalf-of the user (C03)", "MCP knows which user an agent works for and checks the user's own rights (R3 confused deputy).",
-     "Agent uses its own broad service account for every user: simpler but lets any user reach any data through the agent."),
-    ("Tokens and secrets never enter the LLM context; the tool runtime adds them (C10, C14)",
-     "Even a fully manipulated model cannot reveal a token it never saw (R1).",
-     "Passing headers through the prompt/tool description: convenient for developers, exposes secrets to prompt injection."),
-    ("Phishing-resistant MFA for staff and admins (C04)", "Password theft alone is not enough (R4, R6).",
-     "SMS one-time codes: vulnerable to SIM-swap and real-time phishing proxies."),
+    ("Mutual TLS on every connection between zones (CTL-01)", "Both sides prove who they are with a certificate; unknown callers and eavesdroppers are stopped (R2).",
+     "Normal TLS only: encrypts, but does not identify the caller. IP allow-list only: an IP address is not an identity."),
+    ("OAuth2 with tokens valid for only 5 minutes; no static API keys (CTL-02)",
+     "A stolen token stops working within minutes (R1, R2).",
+     "Static API keys: valid for months and shared – exactly what made the incident in EPA-IS-3 possible."),
+    ("Tokens are added by the system, never shown to the AI model (CTL-02)",
+     "Even a manipulated AI cannot leak a token it never saw (R1).",
+     "Putting the token into the AI's instructions: convenient, but prompt injection can make the AI reveal it."),
+    ("Agent requests carry the user's identity (CTL-04)", "MCP checks the rights of the real user, so a student cannot use the agent to read others' grades (R3).",
+     "Agent uses one powerful account for everyone: simpler, but any user could reach any data through the agent."),
+    ("MFA for all users, phishing-resistant security keys for staff and admins (CTL-03)", "A stolen password alone is not enough (R4, R6).",
+     "SMS codes: can be intercepted (SIM swap, phishing pages)."),
 ], widths=(4.6, 6.2, 6.2), font=8.5)
 
-d.add_heading("4. Authorisation design", 1)
-para(d, "Every request is checked twice: at the gateway (is this client allowed to call this endpoint with this scope?) and at the MCP service "
-        "(is this user/agent allowed to see this specific object?). Default is deny.")
-table(d, ["Client / agent", "Allowed scopes", "Explicitly denied"], [
-    ("Tutor agent", "materials:read (course the user is enrolled in), progress:read:self (OBO only)", "grades:*, students:list, any write, generic HTTP tool"),
-    ("Document-search agent", "materials:read, materials:search", "submissions of other users, any personal data"),
-    ("Learning-insights agent (lecturer)", "analytics:read:course-aggregate (k ≥ 10, OBO lecturer of that course)", "individual-level records, other courses"),
-    ("Reporting agent (scheduled)", "report:read-aggregates", "any per-student endpoint"),
-    ("Reporting dashboard (C16)", "report:read-aggregates", "everything else"),
+d.add_heading("4. Authorisation design (role-based access, least privilege)", 1)
+para(d, "Every request is checked twice: at the gateway (may this client call this endpoint?) and in the MCP service "
+        "(may this user see this specific record?). Default is deny.")
+table(d, ["Client / agent", "Allowed", "Explicitly denied"], [
+    ("Tutor agent", "Read course materials of the user's courses; read the user's own progress", "Grades, lists of students, any change of data, free Internet access"),
+    ("Document-search agent", "Read and search course materials", "Submissions of other users, any personal data"),
+    ("Learning-insights agent (lecturer)", "Course statistics for the lecturer's own courses (groups of 10 or more)", "Data about individual students, other courses"),
+    ("Reporting agent (scheduled)", "Read aggregated reports", "Any data about individual students"),
+    ("Reporting dashboard (SYS-16)", "Read aggregated reports", "Everything else"),
 ], widths=(4.0, 7.0, 6.0), font=8.5)
-para(d, "Object-level rule in MCP (C05): a request for progress of student X is allowed only if the OBO token subject = X, "
-        "or the subject is a lecturer of a course X is enrolled in and the endpoint returns aggregates only.", italic=True)
 
-d.add_heading("5. Metadata transfer specification (US-2.2)", 1)
-d.add_heading("5.1 Data classification and boundary rule (US-2.2 AC1)", 2)
+d.add_heading("5. Failure conditions and residual risk (AC3)", 1)
+table(d, ["Failure", "Behaviour", "Residual risk"], [
+    ("Identity provider (SYS-4) unavailable", "Fail closed: no new tokens; existing tokens expire within 5 min", "AI features unavailable; accepted – the on-prem portal still works"),
+    ("Certificate expired", "Connection refused", "Outage; reduced by automatic renewal and expiry alerts"),
+    ("Token and certificate stolen together (cloud server fully taken over)", "Attacker can call the API until access is revoked", "Limited by narrow rights, 500 records/hour quota and alerts – damage capped, not zero"),
+    ("Prompt injection still manipulates an agent", "Agent can only use its own narrow rights", "Wrong answers or misuse within its rights – accepted with monitoring (R1 residual)"),
+    ("Gateway outage", "Cloud features unavailable; on-prem continues", "Accepted; the on-prem core does not depend on the cloud"),
+], widths=(4.6, 5.6, 6.8), font=8.5)
+
+d.add_heading("6. Reflected in the control artefacts (AC4)", 1)
+table(d, ["Design element", "Risks", "Controls (A2-3)", "Shown in"], [
+    ("Component authentication (sections 2–3)", "R1, R2", "CTL-01, CTL-02, CTL-03", "A2-2 flows F2, F4, F5, F10"),
+    ("Authorisation and least privilege (section 4)", "R1, R3", "CTL-04", "A2-2 flows F3, F5, F7"),
+    ("Failure handling (section 5)", "R1, R8", "CTL-06, CTL-11, CTL-15", "A2-2 layers 2, 4, 5"),
+], widths=(6.0, 2.5, 4.5, 4.0), font=8.5)
+save_doc(d, "EPA-IS-2/A2-1_Secure_API_Authentication.docx")
+
+# ================================================================== A2-4 Secure API design – metadata transfer (US-2.2)
+d = new_doc("Secure API Design – Metadata Transfer", "Which data may cross the on-prem ↔ cloud boundary, and how it is protected and monitored",
+            "A2-4", "US-2.2 Secure metadata transfer", f"{who(EGON)}; reviewed by {who(VESANJA)}")
+d.add_heading("1. Design goal", 1)
+para(d, "Only approved, minimised data may leave the on-premises core through the Metadata API (SYS-9). "
+        "This follows GDPR data minimisation: send the cloud only what it really needs. Main risks addressed: R5 (too much personal data "
+        "in the cloud), R2 and R3 (data disclosure), R1 and R8 (detecting misuse). Who may call the API is defined in A2-1.")
+
+d.add_heading("2. Allowed and prohibited data (AC1)", 1)
 table(d, ["Class", "Examples", "May cross to cloud?"], [
     ("Public", "Course titles, public module handbook", "Yes"),
     ("Internal", "Course materials approved by the lecturer, deadlines", "Yes – after lecturer approval for AI use"),
-    ("Confidential – pseudonymised / aggregated", "Engagement metrics per pseudonym, course-level statistics (k ≥ 10)", "Yes – only via allow-listed fields"),
-    ("Confidential – identifying", "Names, e-mail, matriculation number, individual grades, chat history linked to identity", "No"),
-    ("Strictly confidential", "Grade database, health/disability adjustments, research data, credentials, unreleased exam questions", "Never"),
+    ("Confidential – pseudonymised / aggregated", "Learning progress per pseudonym, course statistics (groups of 10 or more)", "Yes – only allow-listed fields"),
+    ("Confidential – identifying", "Names, e-mail, matriculation number, individual grades, chat history linked to a person", "No"),
+    ("Strictly confidential", "Grade database, health/disability information, research data, passwords and keys, unreleased exam questions", "Never"),
 ], widths=(4.5, 8.5, 4.0), font=8.5)
-d.add_heading("5.2 Endpoints", 2)
-table(d, ["Endpoint", "Purpose", "Returned fields (allow-list)", "Scope", "Limits"], [
-    ("GET /v1/courses/{courseId}/materials", "Course material metadata and approved content for RAG", "materialId, title, version, approvedForAI, contentHash", "materials:read", "60 req/min"),
-    ("GET /v1/me/progress", "Own learning progress for tutor personalisation", "pseudoId, courseId, modulesCompleted, nextDeadline", "progress:read:self (OBO)", "60 req/min, 1 subject"),
-    ("GET /v1/courses/{courseId}/analytics", "Aggregated engagement for lecturers", "courseId, week, activeLearners, avgCompletion (k ≥ 10)", "analytics:read:course-aggregate", "30 req/min"),
-    ("GET /v1/reports/{reportId}", "Coordinator reports", "aggregate metrics only; signed (JWS)", "report:read-aggregates", "10 req/min"),
-], widths=(4.4, 3.6, 4.6, 2.6, 1.8), font=8)
-para(d, "There is deliberately no endpoint that lists students or returns grades. Grades are shown only in the on-prem portal (CC2). "
-        "Hard quota for every client: 500 records per hour; requests above the quota are blocked and alerted (C09, C16).", italic=True)
-d.add_heading("5.3 Example response (pseudonymised)", 2)
+
+d.add_heading("3. Endpoints", 1)
+table(d, ["Endpoint", "Purpose", "Returned fields (allow-list)", "Limit"], [
+    ("GET /v1/courses/{courseId}/materials", "Approved course materials for AI search", "materialId, title, version, approvedForAI", "60 requests/min"),
+    ("GET /v1/me/progress", "The user's own progress, for tutoring", "pseudoId, courseId, modulesCompleted, nextDeadline", "60 requests/min, own data only"),
+    ("GET /v1/courses/{courseId}/analytics", "Course statistics for lecturers", "courseId, week, activeLearners, avgCompletion (only groups ≥ 10)", "30 requests/min"),
+    ("GET /v1/reports/{reportId}", "Coordinator reports", "Aggregated numbers only; digitally signed", "10 requests/min"),
+], widths=(4.8, 4.2, 5.8, 2.2), font=8)
+para(d, "There is deliberately no endpoint that lists students or returns grades – grades are only shown in the on-prem portal. "
+        "Every client also has a hard quota of 500 records per hour; above it, requests are blocked and an alert is raised (CTL-06, CTL-11).", italic=True)
+d.add_heading("3.1 Example response (pseudonymised)", 2)
 p = d.add_paragraph()
-r = p.add_run('{ "pseudoId": "p_7f3a91c2", "courseId": "CS301", "modulesCompleted": 4,\n  "nextDeadline": "2026-11-20", "_class": "confidential-pseudonymised" }')
+r = p.add_run('{ "pseudoId": "p_7f3a91c2", "courseId": "CS301", "modulesCompleted": 4,\n  "nextDeadline": "2026-11-20" }')
 r.font.name = "Courier New"; r.font.size = Pt(9)
-note(d, "pseudoId = HMAC-SHA256(matriculationNo, secret key). The key stays in the on-prem vault (S17), so the cloud cannot reverse it (C08).")
+note(d, "pseudoId is created from the matriculation number with a secret key that stays on-prem, so the cloud cannot turn it back into a real ID.")
 
-d.add_heading("5.4 Confidentiality and integrity controls (US-2.2 AC2)", 2)
+d.add_heading("4. Confidentiality and integrity controls (AC2)", 1)
 table(d, ["Control", "Protects", "How"], [
-    ("C01 mTLS / TLS 1.3", "C + I in transit", "Encryption and mutual authentication on every hop"),
-    ("C07 Schema allow-list + outbound filter", "C (minimisation)", "Gateway drops any field not in the allow-list; pattern checks block e-mails/matriculation numbers"),
-    ("C08 Pseudonymisation + k-anonymity", "C", "Keyed HMAC pseudonyms; aggregates suppressed when group < 10"),
-    ("JWS signature on reports", "I", "Reports signed by gateway key; dashboard verifies signature before display"),
-    ("C13 Encryption at rest with customer-managed keys", "C at rest in cloud", "Cloud storage and vector DB encrypted with MUDT-controlled keys"),
-    ("Input validation", "I", "Strict types, max lengths, no free-text query language (no GraphQL/SQL passthrough)"),
-], widths=(5.0, 3.0, 9.0), font=8.5)
+    ("CTL-01 TLS 1.3 (mutual)", "Confidentiality + integrity in transit", "Encryption and identity check on every connection"),
+    ("CTL-05 Data minimisation", "Confidentiality", "Gateway drops every field not on the allow-list and blocks e-mails / matriculation numbers; pseudonyms instead of IDs; statistics only for groups ≥ 10"),
+    ("Digitally signed reports", "Integrity", "The dashboard checks the signature before showing a report, so changed numbers are detected"),
+    ("CTL-09 Encryption at rest", "Confidentiality in the cloud", "Cloud storage and vector DB encrypted with keys controlled by MUDT"),
+    ("Input validation", "Integrity", "Fixed parameters and types only; no free query language"),
+], widths=(4.5, 4.0, 8.5), font=8.5)
 
-d.add_heading("6. Logging and monitoring (US-2.2 AC3)", 1)
-para(d, "Every gateway and MCP decision produces one log event, sent to the append-only audit log in Z3 (C15). "
-        "Fields: timestamp (UTC), clientId, agentId, OBO subject (pseudonym), source IP, certificate fingerprint, endpoint, scope, "
-        "decision (allow/deny), records returned, response size, token ID (jti). No payloads and no personal data in logs (C26).")
-table(d, ["Alert (C16)", "Threshold", "Why"], [
-    ("Volume anomaly per client", "> 500 records/hour or > 3× 7-day baseline", "Detects bulk extraction such as INC-2026-001"),
-    ("Token used from new IP / certificate mismatch", "Any", "Indicates token theft"),
-    ("Denied requests burst", "> 20 denies in 5 min", "Probing or manipulated agent"),
-    ("Outbound filter hit", "Any blocked field", "Indicates over-sharing bug or exfiltration attempt (R5)"),
-    ("Off-hours admin access to gateway config", "Any", "Insider / admin compromise (R6)"),
+d.add_heading("5. Logging and monitoring (AC3)", 1)
+para(d, "Every gateway and MCP decision creates one log entry in the tamper-proof audit log in Z3 (CTL-10): time (UTC), client, agent, "
+        "user pseudonym, source IP, endpoint, decision (allowed/denied), number of records, token ID. No personal data and no content in logs.")
+table(d, ["Alert (CTL-11)", "Threshold", "Why"], [
+    ("Unusual volume per client", "> 500 records/hour or 3× the normal level", "Detects bulk data theft as in INC-2026-001"),
+    ("Token used from a new IP address", "Any", "Sign of a stolen token"),
+    ("Many denied requests", "> 20 in 5 minutes", "Probing or a manipulated agent"),
+    ("Allow-list blocked a field", "Any", "Bug or attempt to send too much data (R5)"),
 ], widths=(5.5, 5.0, 6.5), font=8.5)
 
-d.add_heading("7. Failure conditions and residual risk (US-2.1 AC3)", 1)
-table(d, ["Failure", "Behaviour", "Residual risk"], [
-    ("Identity provider (C4) unavailable", "Fail closed: no new tokens; existing tokens expire within 5 min", "Availability loss of AI features; accepted – grades/portal still usable with cached SSO sessions"),
-    ("Certificate expired", "Connection refused", "Outage; mitigated by automatic rotation and expiry alerts (C14)"),
-    ("Token stolen together with workload key (full cloud host compromise)", "Attacker can call API until token/cert revoked", "Limited by scopes, 500 records/hour quota and alerting – damage capped, not zero"),
-    ("Outbound filter rule wrong", "Data could be over-shared", "Detected by filter-hit monitoring and quarterly data-flow review"),
-    ("Prompt injection still manipulates agent", "Agent can only use its narrow scopes", "Agent may give wrong answers or misuse its own data scope – accepted with monitoring (R1 residual)"),
-    ("Gateway outage", "Cloud features unavailable; on-prem continues", "Accepted; on-prem core does not depend on cloud"),
-], widths=(4.6, 5.6, 6.8), font=8.5)
-
-d.add_heading("8. Assumptions and alternatives (US-2.2 AC4)", 1)
-bullets(d, ["**Assumption:** cloud provider offers private connectivity and workload identity (A2, A3).",
+d.add_heading("6. Assumptions and alternatives (AC4)", 1)
+bullets(d, ["**Assumption:** the cloud provider offers private network connections and an EU region (A2, A3).",
             "**Assumption:** lecturers mark which materials are approved for AI use.",
-            "**Alternative rejected – run the LLM fully on-prem:** removes the cloud boundary but too expensive and not scalable for MUDT now; reconsider for strictly confidential use cases.",
-            "**Alternative rejected – VPN tunnel only:** encrypts the network but grants broad network access and no per-request identity.",
-            "**Alternative rejected – GraphQL API:** flexible queries make allow-listing and quotas much harder.",
-            "**Alternative considered – synthetic or fully anonymised data only:** safest, but tutor personalisation would not work; kept for reporting agent."])
-d.add_heading("9. Traceability", 1)
-table(d, ["Design element", "Risks", "Controls", "Story"], [
-    ("Component authentication (sections 2–3)", "R1, R2", "C01, C02, C04, C14", "US-2.1"),
-    ("Authorisation and OBO (section 4)", "R1, R3", "C03, C05, C06", "US-2.1"),
-    ("Data allow-list, pseudonymisation (5)", "R3, R5", "C07, C08, C13, C25", "US-2.2"),
-    ("Logging and alerting (6)", "R1, R8, R10", "C15, C16, C26", "US-2.2"),
-], widths=(6.5, 3.0, 4.5, 3.0), font=8.5)
-save_doc(d, "EPA-IS-2/A2-1_Secure_API_Design.docx")
+            "**Assumption:** a data processing agreement with the cloud/AI provider is in place (CTL-16).",
+            "**Rejected – run the AI model fully on-prem:** removes the cloud boundary, but too expensive for MUDT now.",
+            "**Rejected – VPN tunnel only:** encrypts the network but allows broad access and does not check each request.",
+            "**Rejected – flexible query API (e.g. GraphQL):** free queries make the allow-list and quotas much harder to enforce.",
+            "**Considered – fully anonymised data only:** safest, but personal tutoring would not work; used for the reporting agent."])
+d.add_heading("7. Traceability", 1)
+table(d, ["Design element", "Risks", "Controls (A2-3)"], [
+    ("Allowed data, allow-list, pseudonyms (2–4)", "R2, R3, R5", "CTL-05, CTL-09, CTL-16"),
+    ("Encryption in transit (4)", "R2", "CTL-01"),
+    ("Quotas, logging and alerts (3, 5)", "R1, R8, R10", "CTL-06, CTL-10, CTL-11"),
+], widths=(8.0, 4.0, 5.0), font=8.5)
+save_doc(d, "EPA-IS-2/A2-4_Secure_Metadata_Transfer.docx")
 
 # ================================================================== A2-2 Trust architecture
 D.trust_architecture(os.path.join(F, "A2-2_trust_architecture.png"))
@@ -147,41 +154,42 @@ d.add_heading("1.1 Zone definitions", 2)
 table(d, ["ID", "Zone", "Trust level", "Content"], ZONES, widths=(1.5, 5.5, 5.5, 13.0))
 d.add_heading("1.2 Flow register (only these flows are allowed – everything else is blocked)", 2)
 FLOWS = [
-    ("F1", "Users → Web portal (C8)", "Z0 → Z1", "HTTPS 443, TLS 1.3, WAF, DDoS protection", "C27, C29"),
-    ("F2", "Portal → Identity provider (C4)", "Z1 → Z2", "OIDC; MFA; FIDO2 for staff", "C04"),
-    ("F3", "Portal → SIS / grades / storage", "Z1 → Z2", "mTLS, per-function service accounts, user-scoped queries; four-eyes for grade changes", "C05, C23"),
-    ("F4", "MCP (C5) ↔ Metadata API (C9)", "Z2 ↔ Z4", "mTLS, allow-listed fields, pseudonymisation", "C01, C07, C08"),
-    ("F5", "Agents (C10/C11) ↔ Metadata API (C9)", "Z5 ↔ Z4", "mTLS + 5-min OAuth2 tokens, OBO, scopes, rate limits", "C02, C03, C06, C09"),
-    ("F6", "Metadata API → Reporting dashboard (C16)", "Z4 → Z5", "Signed aggregate reports only", "C07, C08"),
-    ("F7", "MCP → data stores", "Z2 internal", "Read-only views per tool", "C05, C06"),
-    ("F8", "Core → immutable backups", "Z2 → Z3", "One-way, backup service account, offline copy", "C20"),
-    ("F9", "All components → audit log / SIEM (gateway shown)", "all → Z3", "Append-only, no read-back", "C15, C26"),
-    ("F10", "Admins → jump host", "Z0 → Z3", "VPN + FIDO2 + PAM, session recording", "C04, C19"),
+    ("F1", "Users → Web portal (SYS-8)", "Z0 → Z1", "HTTPS (TLS 1.3), web application firewall, DDoS protection", "CTL-06, CTL-12"),
+    ("F2", "Portal → Identity provider (SYS-4)", "Z1 → Z2", "Single sign-on with MFA; security keys for staff", "CTL-03"),
+    ("F3", "Portal → student systems / grades / storage", "Z1 → Z2", "Mutual TLS, one service account per function, only the user's own data; four-eyes for grade changes", "CTL-04, CTL-13"),
+    ("F4", "MCP (SYS-5) ↔ Metadata API (SYS-9)", "Z2 ↔ Z4", "Mutual TLS, allow-listed fields, pseudonyms", "CTL-01, CTL-05"),
+    ("F5", "Agents (SYS-10/SYS-11) ↔ Metadata API (SYS-9)", "Z5 ↔ Z4", "Mutual TLS + 5-minute OAuth2 tokens with the user's identity, least privilege, rate limits", "CTL-02, CTL-04, CTL-06"),
+    ("F6", "Metadata API → Reporting dashboard (SYS-16)", "Z4 → Z5", "Signed aggregated reports only", "CTL-05"),
+    ("F7", "MCP → databases", "Z2 internal", "Read-only access per tool", "CTL-04"),
+    ("F8", "Core → offline backups", "Z2 → Z3", "One-way, separate backup account, offline copy", "CTL-14"),
+    ("F9", "All components → audit log (gateway shown)", "all → Z3", "Write-only, tamper-proof", "CTL-10"),
+    ("F10", "Admins → jump host", "Z0 → Z3", "VPN + MFA + jump host, sessions recorded", "CTL-03, CTL-13"),
 ]
 table(d, ["ID", "Flow", "Zones", "Protection", "Controls"], FLOWS, widths=(1.3, 6.5, 2.6, 11.0, 4.1))
-para(d, "Blocked by design: Z1 → databases directly; Z5 → Z2 directly; Internet → Z3; any flow carrying grades (C2) or research data (C3) out of Z2.", bold=True)
+para(d, "Blocked by design: Z1 → databases directly; Z5 → Z2 directly; Internet → Z3; cloud agents → any destination not on the egress allow-list; "
+        "any flow carrying grades (SYS-2) or research data (SYS-3) out of Z2.", bold=True)
 
 d.add_heading("2. Layered controls (defence in depth)", 1)
 para(d, "If one layer fails, the next layer still limits the damage. The table shows for each layer which controls prevent, detect or correct an attack.")
 LAYERS = [
-    ("1 Governance and people", "C24 training, C25 supplier DPA, C11 human approval", "C23 four-eyes audit trail", "C21 incident response plan"),
-    ("2 Identity", "C02 short-lived tokens, C03 OBO, C04 FIDO2 MFA, C14 secrets vault", "C16 token-from-new-IP alert", "C22 token revocation"),
-    ("3 Network / zones", "C12 segmentation, private interconnect, C27 DDoS protection", "C16 network anomaly alerts", "Isolate zone / block IP"),
-    ("4 API gateway", "C01 mTLS, C07 allow-list, C09 rate limits", "C15 gateway logs", "C22 kill-switch per client"),
-    ("5 AI agents", "C06 least-privilege tools, C10 injection defences, C28 grounding", "C14/C16 usage monitoring", "C22 disable agent, quarantine document"),
-    ("6 Data", "C08 pseudonymisation, C13 encryption at rest", "C17 posture scans for public storage", "C20 restore from immutable backup"),
-    ("7 Platform and supply chain", "C18 signed builds, C29 patching, C19 PAM", "C29 EDR, C18 dependency scans", "Rebuild from signed artefacts"),
+    ("1 People and suppliers", "CTL-16 training, supplier contracts", "CTL-13 four-eyes check on grade changes", "CTL-15 incident response plan"),
+    ("2 Identity", "CTL-02 short-lived tokens, CTL-03 MFA", "CTL-11 alert: token used from new IP", "CTL-15 revoke tokens"),
+    ("3 Network / zones", "CTL-08 segmentation, firewalls, egress allow-list", "CTL-11 network anomaly alerts", "Isolate zone, block IP"),
+    ("4 API gateway", "CTL-01 mutual TLS, CTL-05 data allow-list, CTL-06 rate limits", "CTL-10 gateway audit log", "CTL-15 kill-switch per client"),
+    ("5 AI agents", "CTL-04 least privilege, CTL-07 AI agent safeguards", "CTL-11 usage monitoring", "CTL-15 switch off agent, remove document"),
+    ("6 Data", "CTL-05 pseudonyms, CTL-09 encryption at rest", "CTL-12 configuration checks (no public storage)", "CTL-14 restore from offline backup"),
+    ("7 Platform and software", "CTL-12 patching, signed builds; CTL-13 protected admin access", "CTL-12 dependency checks, anti-malware", "Rebuild from signed software"),
 ]
 table(d, ["Layer", "Preventive", "Detective", "Corrective"], LAYERS, widths=(4.5, 9.0, 6.0, 6.0))
 
 d.add_heading("3. Dependencies and failure paths (US-2.3 AC3)", 1)
 table(d, ["Dependency / single point of failure", "Failure path", "How the architecture contains it"], [
-    ("Identity provider C4", "C4 compromised → attacker issues tokens for any identity", "C4 in Z2 core, admin only via PAM; FIDO2; tokens audience-bound; alerts on unusual token issuance"),
-    ("Metadata API C9", "Gateway compromised → filter bypass", "MCP re-checks every token and object (no implicit trust); outbound filter also in MCP; logs written to Z3"),
-    ("Cloud zone Z5", "Full cloud compromise", "Cloud only ever holds pseudonymised/approved data; no route into Z2; kill-switch at gateway"),
-    ("Audit log C6", "Attacker deletes evidence", "WORM storage, separate admin accounts, log forwarding"),
-    ("Backups S18", "Ransomware encrypts backups", "Offline immutable copy, separate credentials, quarterly restore test"),
-    ("HMAC pseudonymisation key", "Key leaks → pseudonyms reversible", "Key in on-prem vault, never sent to cloud, annual rotation"),
+    ("Identity provider SYS-4", "SYS-4 taken over → attacker creates tokens for anyone", "SYS-4 in the protected core; admin access only via jump host with MFA; alerts on unusual token creation"),
+    ("Metadata API SYS-9", "Gateway taken over → allow-list bypassed", "MCP checks every token and record again (no blind trust); logs are written to Z3, out of the attacker's reach"),
+    ("Cloud zone Z5", "Whole cloud zone taken over", "The cloud only holds pseudonymised/approved data; no route into Z2; kill-switch at the gateway"),
+    ("Audit log SYS-6", "Attacker deletes evidence", "Tamper-proof storage, separate admin accounts"),
+    ("Backups S18", "Ransomware encrypts backups", "Offline copy, separate credentials, regular restore tests"),
+    ("Pseudonymisation key", "Key leaks → pseudonyms can be traced back", "Key stays in the on-prem vault, never sent to the cloud, changed yearly"),
 ], widths=(5.5, 7.0, 13.0))
 
 d.add_heading("4. Risk cross-reference (US-2.3 AC4)", 1)
