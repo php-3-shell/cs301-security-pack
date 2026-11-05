@@ -140,7 +140,7 @@ save_doc(d, "EPA-IS-2/A2-1_Secure_API_Design.docx")
 # ================================================================== A2-2 Trust architecture
 D.trust_architecture(os.path.join(F, "A2-2_trust_architecture.png"))
 d = new_doc("Trust Architecture", "Separated trust zones and layered (defence-in-depth) controls", "A2-2",
-            "US-2.3 Separate trust zones and design layered architecture", f"{who(VESANJA)}; reviewed by {who(EGON)}", landscape=True)
+            "US-2.3 Separate trust zones and design layered architecture", f"{who(EFE)}; reviewed by {who(EGON)}", landscape=True)
 d.add_heading("1. Trust zones and permitted flows", 1)
 image(d, os.path.join(F, "A2-2_trust_architecture.png"), 24.5)
 d.add_heading("1.1 Zone definitions", 2)
@@ -196,7 +196,7 @@ save_doc(d, "EPA-IS-2/A2-2_Trust_Architecture.docx")
 
 # ================================================================== A2-3 Control matrix
 wb = Workbook()
-meta = f"Artefact A2-3 · US-2.1/2.2/2.3 · owner {who(VESANJA)} · reviewed by {who(EGON)} · {VERSION} · {DATE}"
+meta = f"Artefact A2-3 · US-2.1/2.2/2.3 · owner {who(EFE)} · reviewed by {who(EGON)} · {VERSION} · {DATE}"
 rows = [(c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7], "Planned") for c in CONTROLS]
 sheet(wb, "Control matrix", ["ID", "Control", "Type", "Function", "NIST CSF 2.0", "Where (component/zone)", "Risks reduced", "Story", "Status"],
       rows, [6, 62, 14, 18, 20, 24, 18, 9, 10], title="A2-3 Control Matrix", meta=meta, first=True)

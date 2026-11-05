@@ -4,7 +4,7 @@ Individual presentation = 60 % of the grade. The lecturer asks unseen questions,
 **(1) Which risk does this reduce? (2) What assumption does it rely on? (3) What happens if the control fails? (4) Which alternative did you reject, and why? (5) What residual risk remains?**
 For each story below, there is a short "what we did" and an answer to all five. Learn the reasoning, not the wording.
 
-**Who presents what:** Egon – US-1.1, 1.3, 2.2, 3.1, 3.3 · Vesanja – US-1.2, 2.1, 2.3, 3.2. Each of you also reviewed the other's stories, so be ready for questions on those too.
+**Who presents what:** Egon – US-1.3, 2.2, 3.2 · Vesanja – US-1.2, 2.1, 3.1 · Efe – US-1.1, 2.3, 3.3. Each of you also reviews one other member's stories (see README), so be ready for questions on those too.
 
 ---
 
@@ -33,7 +33,7 @@ Traps: *threat ≠ risk*. *Missing authentication* is a **vulnerability**, not a
 
 ## EPIC 1 – Assess
 
-### US-1.1 Identify critical assets (Egon)
+### US-1.1 Identify critical assets (Efe)
 **What we did:** listed components and zones from the lecture architecture. We separated **essential** assets (information/processes with business value, E1–E11) from **supporting** assets (systems, people, suppliers they depend on, S1–S22), then rated each on C, I and A with a justification.
 **Why it matters:** attackers usually hit a supporting asset (e.g. the API gateway) to harm an essential one (student data).
 1. **Risk reduced:** prevents protecting the wrong things. Every later risk points to an asset ID.
@@ -80,7 +80,7 @@ Traps: *threat ≠ risk*. *Missing authentication* is a **vulnerability**, not a
 4. **Rejected:** fully on-prem LLM (too expensive now), VPN only (no per-request identity), GraphQL (too flexible to allow-list).
 5. **Residual:** pseudonymised data can sometimes be re-identified by combining it with other data.
 
-### US-2.3 Trust zones and layered architecture (Vesanja)
+### US-2.3 Trust zones and layered architecture (Efe)
 **What we did:** 6 zones (Z0–Z5), a flow register (F1–F10) where *everything else is blocked*, 7 defence-in-depth layers with preventive/detective/corrective controls, failure paths for each single point of failure, and a control matrix (C01–C30) with a risk × control coverage check.
 1. **Risk reduced:** contains a compromise. A fully compromised cloud zone still has no route into the core (R1, R2, R9).
 2. **Assumption:** network rules are enforced as drawn. There's no hidden extra route between cloud and core (A3).
@@ -92,7 +92,7 @@ Traps: *threat ≠ risk*. *Missing authentication* is a **vulnerability**, not a
 
 ## EPIC 3 – Investigate (simulated incident INC-2026-001)
 
-### US-3.1 Reconstruct attack timeline (Egon)
+### US-3.1 Reconstruct attack timeline (Vesanja)
 **What happened:** a PDF with hidden text was uploaded and indexed. The tutor agent read it, followed the instruction and sent out its 30-day token. The attacker used the token from 203.0.113.45 for about 10,000 requests and got about 11,800 student records. A cloud cost alert fired after 71 minutes, and containment came at 96 minutes. The authority was notified within 72 hours (GDPR Art. 33).
 **Method:** each event has a timestamp, evidence ID (EV-01–EV-11), and is marked **fact / inferred / assumption**.
 1. **Risk:** R1. The timeline shows the attack path AP1 actually happening.
@@ -101,7 +101,7 @@ Traps: *threat ≠ risk*. *Missing authentication* is a **vulnerability**, not a
 4. **Rejected:** a story without evidence references. It couldn't be verified or defended.
 5. **Residual uncertainty:** whether the attacker kept the data. We assume yes for notification.
 
-### US-3.2 Determine root causes (Vesanja)
+### US-3.2 Determine root causes (Egon)
 **Root causes:** RC1 secrets visible to the model, plus long-lived unbound tokens. RC2 excessive agent rights. RC3 untrusted content treated as instructions. RC4 over-exposed legacy endpoint. RC5 no quotas or security alerts. RC6 unrestricted internet egress. Contributing factors: no security review of agent configuration, pilot endpoint never removed, no training, no owner.
 **Method:** five whys, then mapping each cause to the missing controls from the control matrix.
 1. **Risk:** R1 and R5. It explains *why* the risk materialised.
@@ -110,7 +110,7 @@ Traps: *threat ≠ risk*. *Missing authentication* is a **vulnerability**, not a
 4. **Rejected hypothesis:** token leaked via CI logs. The tool trace shows it leaving at 08:12:41, and misuse started 18 minutes later from a new IP.
 5. **Residual:** prompt injection can't be fully prevented at model level. Defence must sit outside the model.
 
-### US-3.3 Recommend corrective actions (Egon)
+### US-3.3 Recommend corrective actions (Efe)
 **What we did:** 16 actions in 4 phases: containment 0–24 h, recovery 1–7 days, short term ≤ 30 days, long term ≤ 1 semester. Each has a root cause, risk, control, owner role, dependency, target date and success measure, plus a residual risk table (before/after).
 1. **Risk:** R1 goes from 20 to 8, R2 from 15 to 5, R3 from 16 to 6, R5 from 12 to 6.
 2. **Assumption:** budget and staff exist for the short-term actions. The order respects dependencies (e.g. new tokens before scopes).

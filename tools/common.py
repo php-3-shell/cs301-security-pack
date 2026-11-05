@@ -12,10 +12,11 @@ from openpyxl.utils import get_column_letter
 OUT = os.environ.get("CS301_OUT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 TEAM_NAME = "php3shell"
-REPO = "[GITHUB REPOSITORY URL]"
+REPO = "https://github.com/anja820/cs301-security-pack"
 EGON = "Egon Hashani"
 VESANJA = "Vesanja Bregasi"
-GH = {EGON: "eszvc", VESANJA: "[GITHUB USERNAME]"}
+EFE = "Efe"
+GH = {EGON: "eszvc", VESANJA: "anja820", EFE: "A-Efe24"}
 def who(n): return f"{n} ({GH[n]})"
 
 CASE = "MUDT AI Learning Assistant and Management Platform (hybrid on-premises / cloud)"
@@ -57,7 +58,7 @@ def new_doc(title, subtitle, artefact_id, story_ids, owner, landscape=False):
     r.font.color.rgb = RGBColor.from_string(ACCENT)
     p = d.add_paragraph(); r = p.add_run(subtitle); r.italic = True; r.font.size = Pt(12)
     kv(d, [("Artefact ID", artefact_id), ("Case", CASE), ("User stories", story_ids),
-           ("Artefact owner", owner), ("Team", f"{TEAM_NAME} – {EGON}, {VESANJA}"),
+           ("Artefact owner", owner), ("Team", f"{TEAM_NAME} – {EGON}, {VESANJA}, {EFE}"),
            ("Version / date", f"{VERSION} / {DATE}")])
     fp = sec.footer.paragraphs[0]; fp.text = f"CS301 Basics of Information Security · {artefact_id} · {VERSION}"
     fp.runs[0].font.size = Pt(8); fp.runs[0].font.color.rgb = RGBColor(0x80, 0x80, 0x80)

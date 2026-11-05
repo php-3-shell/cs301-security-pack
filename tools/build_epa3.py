@@ -64,7 +64,7 @@ D.incident_timeline(os.path.join(F, "A3-1_incident_timeline.png"), [
     ("20 Nov", "Students\ninformed", "Recovery"), ("24 Nov", "Restricted\nrestart", "Recovery")])
 
 wb = Workbook()
-meta = f"Artefact A3-1 · US-3.1 · owner {who(EGON)} · reviewed by {who(VESANJA)} · {VERSION} · {DATE}"
+meta = f"Artefact A3-1 · US-3.1 · owner {who(VESANJA)} · reviewed by {who(EFE)} · {VERSION} · {DATE}"
 ws = wb.active; ws.title = "Summary"
 ws["A1"] = "A3-1 Incident Timeline – INC-2026-001"; ws["A1"].font = Font(bold=True, size=14, color=ACCENT)
 ws["A2"] = meta; ws["A2"].font = Font(italic=True, size=9, color="595959")
@@ -121,7 +121,7 @@ CONTRIB = [
 ]
 
 d = new_doc("Root-Cause Review – INC-2026-001", "Why the incident was possible and why controls did not stop it", "A3-2",
-            "US-3.2 Determine root causes", f"{who(VESANJA)}; reviewed by {who(EGON)}")
+            "US-3.2 Determine root causes", f"{who(EGON)}; reviewed by {who(VESANJA)}")
 note(d, EXERCISE)
 d.add_heading("1. Immediate events vs root causes", 1)
 para(d, "'Token theft' is an event. A root cause explains why the event was possible and why controls did not stop it (lecture slide 28). "
@@ -179,7 +179,7 @@ RM = [
     ("RM-16", "Long term (≤ 1 semester)", "IR playbook for agent/token compromise; training for developers and lecturers", "People, Governance", "R1, R4", "C21, C24", "IT Security Officer", "–", "2027-02-28", "Tabletop exercise completed"),
 ]
 wb = Workbook()
-meta = f"Artefact A3-3 · US-3.3 · owner {who(EGON)} · reviewed by {who(VESANJA)} · {VERSION} · {DATE}"
+meta = f"Artefact A3-3 · US-3.3 · owner {who(EFE)} · reviewed by {who(EGON)} · {VERSION} · {DATE}"
 sheet(wb, "Roadmap", ["ID", "Phase", "Action", "Root cause", "Risks", "Controls (A2-3)", "Owner (role)", "Depends on", "Target", "Success measure / status"],
       RM, [7, 20, 58, 14, 10, 14, 22, 11, 12, 36], title="A3-3 Remediation Roadmap – INC-2026-001", meta=meta, first=True)
 RES = [("R1", 4, 5, 2, 4, "Quota caps damage to ≤ 500 pseudonymised records/h; injection still possible but token and scopes limited"),

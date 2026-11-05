@@ -1,6 +1,7 @@
 # CS301 Basics of Information Security – Team Artefacts
 
-**Team:** php3shell · **Members:** Egon Hashani (`eszvc`), Vesanja Bregasi (`[GITHUB USERNAME]`) · **Coordinator:** Egon Hashani
+**Team:** php3shell · **Members:** Egon Hashani (`eszvc`), Vesanja Bregasi (`anja820`), Efe (`A-Efe24`) · **Coordinator:** Egon Hashani
+**Repository:** https://github.com/anja820/cs301-security-pack
 **Case:** MUDT AI Learning Assistant and Management Platform (hybrid on-premises / cloud, Session 1 slides 5 and 8)
 **Review version:** v0.1 draft for team review (2026-10-30)
 
@@ -11,17 +12,17 @@ All IDs are shared across files: assets `E1–E11`/`S1–S22`, components `C1–
 
 | EPA / Story | Pts | Artefact | Owner | Reviewer | Status |
 |---|---|---|---|---|---|
-| EPA-IS-1 · US-1.1 Identify critical assets | 5 | `EPA-IS-1/A1-1_Risk_Concept_Map_and_Threat_Model.docx` (§2–3), `EPA-IS-1/A1-2_Asset_Register.xlsx` | Egon | Vesanja | Review |
-| EPA-IS-1 · US-1.2 Threats and attack paths | 8 | `EPA-IS-1/A1-1_Risk_Concept_Map_and_Threat_Model.docx` (§4) | Vesanja | Egon | Review |
+| EPA-IS-1 · US-1.1 Identify critical assets | 5 | `EPA-IS-1/A1-1_Risk_Concept_Map_and_Threat_Model.docx` (§2–3), `EPA-IS-1/A1-2_Asset_Register.xlsx` | Efe | Egon | Review |
+| EPA-IS-1 · US-1.2 Threats and attack paths | 8 | `EPA-IS-1/A1-1_Risk_Concept_Map_and_Threat_Model.docx` (§4) | Vesanja | Efe | Review |
 | EPA-IS-1 · US-1.3 Prioritise risks | 8 | `EPA-IS-1/A1-3_Risk_Register.xlsx` | Egon | Vesanja | Review |
-| EPA-IS-2 · US-2.1 Authenticate component communication | 8 | `EPA-IS-2/A2-1_Secure_API_Design.docx` (§2–4, 7), `EPA-IS-2/A2-3_Control_Matrix.xlsx` | Vesanja | Egon | Review |
+| EPA-IS-2 · US-2.1 Authenticate component communication | 8 | `EPA-IS-2/A2-1_Secure_API_Design.docx` (§2–4, 7), `EPA-IS-2/A2-3_Control_Matrix.xlsx` | Vesanja | Efe | Review |
 | EPA-IS-2 · US-2.2 Secure metadata transfer | 8 | `EPA-IS-2/A2-1_Secure_API_Design.docx` (§5–6, 8), `EPA-IS-2/A2-3_Control_Matrix.xlsx` | Egon | Vesanja | Review |
-| EPA-IS-2 · US-2.3 Trust zones and layered architecture | 13 | `EPA-IS-2/A2-2_Trust_Architecture.docx`, `EPA-IS-2/A2-3_Control_Matrix.xlsx` | Vesanja | Egon | Review |
-| EPA-IS-3 · US-3.1 Reconstruct attack timeline | 8 | `EPA-IS-3/A3-1_Incident_Timeline.xlsx` | Egon | Vesanja | Review |
-| EPA-IS-3 · US-3.2 Determine root causes | 8 | `EPA-IS-3/A3-2_Root_Cause_Review.docx` | Vesanja | Egon | Review |
-| EPA-IS-3 · US-3.3 Recommend corrective actions | 5 | `EPA-IS-3/A3-3_Remediation_Roadmap.xlsx` | Egon | Vesanja | Review |
+| EPA-IS-2 · US-2.3 Trust zones and layered architecture | 13 | `EPA-IS-2/A2-2_Trust_Architecture.docx`, `EPA-IS-2/A2-3_Control_Matrix.xlsx` | Efe | Egon | Review |
+| EPA-IS-3 · US-3.1 Reconstruct attack timeline | 8 | `EPA-IS-3/A3-1_Incident_Timeline.xlsx` | Vesanja | Efe | Review |
+| EPA-IS-3 · US-3.2 Determine root causes | 8 | `EPA-IS-3/A3-2_Root_Cause_Review.docx` | Egon | Vesanja | Review |
+| EPA-IS-3 · US-3.3 Recommend corrective actions | 5 | `EPA-IS-3/A3-3_Remediation_Roadmap.xlsx` | Efe | Egon | Review |
 
-Points: Egon 34 · Vesanja 37 · total 71. Task breakdown (27 tasks), branches and contribution log: `00-Delivery/CS301_Agile_Delivery_Templates_EPA_filled.docx`.
+Points: Egon 24 · Vesanja 24 · Efe 23 · total 71 (one story per epic each). Task breakdown (27 tasks), branches and contribution log: `00-Delivery/CS301_Agile_Delivery_Templates_EPA_filled.docx`.
 Diagrams (`*.png`) are embedded in the documents and kept as separate files.
 `tools/` holds the Python scripts that generate all artefacts from one shared data model (`tools/data.py`), so IDs stay consistent: `pip install -r tools/requirements.txt`, then run `build_epa1.py`, `build_epa2.py`, `build_epa3.py`, `fill_template.py`. `00-Delivery/original/` is the unmodified lecturer template.
 
@@ -41,7 +42,6 @@ After merging, write the short SHA / PR number into the task table and contribut
 
 ## Open items before submission
 
-- [ ] Fill in team name, repository URL and Vesanja's GitHub username (README + template pack cover table).
 - [ ] Export PDFs (checklist requires them): open each `.docx`/`.xlsx` and choose *File → Export as PDF*. They couldn't be generated automatically because LibreOffice Writer/Calc aren't installed (`sudo dnf install libreoffice-writer libreoffice-calc`, then `soffice --headless --convert-to pdf <file>`).
 - [ ] Both members review each other's stories, then commit using the workflow above.
 - [ ] Complete the sprint retrospective table at each sprint review.

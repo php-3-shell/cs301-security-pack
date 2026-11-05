@@ -34,7 +34,7 @@ D.heat_map(os.path.join(F, "A1-3_risk_heat_map.png"))
 
 # ------------------------------------------------------------------ A1-1 docx
 d = new_doc("Risk Concept Map and Threat Model", "System context, risk concept chains, threat actors, entry points and attack paths",
-            "A1-1", "US-1.1 (system context, concept map) · US-1.2 (threat model)", f"{who(EGON)} – concept map; {who(VESANJA)} – threat model")
+            "A1-1", "US-1.1 (system context, concept map) · US-1.2 (threat model)", f"{who(EFE)} – system context, concept map (US-1.1); {who(VESANJA)} – threat model (US-1.2)")
 
 d.add_heading("1. Purpose and how to read this artefact", 1)
 para(d, "This artefact answers two questions for the MUDT platform: (1) what are we protecting and how do the six risk concepts "
@@ -97,7 +97,7 @@ save_doc(d, "EPA-IS-1/A1-1_Risk_Concept_Map_and_Threat_Model.docx")
 
 # ------------------------------------------------------------------ A1-2 asset register
 wb = Workbook()
-meta = f"Artefact A1-2 · US-1.1 · owner {who(EGON)} · reviewed by {who(VESANJA)} · {VERSION} · {DATE}"
+meta = f"Artefact A1-2 · US-1.1 · owner {who(EFE)} · reviewed by {who(EGON)} · {VERSION} · {DATE}"
 rows = [(e[0], e[1], e[2], e[3], e[4], LVL[e[5]], LVL[e[6]], LVL[e[7]], LVL[max(e[5:8])], e[8], e[9], e[10], e[11],
          ", ".join(r[0] for r in RISKS if e[0] in r[4].replace(" ", "").split(","))) for e in ESSENTIAL]
 sheet(wb, "Essential assets", ["ID", "Asset", "Type", "Description", "Business value", "C", "I", "A", "Overall criticality",
