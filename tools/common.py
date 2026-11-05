@@ -12,7 +12,7 @@ from openpyxl.utils import get_column_letter
 OUT = os.environ.get("CS301_OUT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 TEAM_NAME = "php3shell"
-REPO = "https://github.com/anja820/cs301-security-pack"
+REPO = "https://github.com/php-3-shell/cs301-security-pack"
 EGON = "Egon Hashani"
 VESANJA = "Vesanja Bregasi"
 EFE = "Efe"

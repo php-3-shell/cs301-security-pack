@@ -1,7 +1,7 @@
 # CS301 Basics of Information Security – Team Artefacts
 
 **Team:** php3shell · **Members:** Egon Hashani (`eszvc`), Vesanja Bregasi (`anja820`), Efe (`A-Efe24`) · **Coordinator:** Egon Hashani
-**Repository:** https://github.com/anja820/cs301-security-pack
+**Repository:** https://github.com/php-3-shell/cs301-security-pack
 **Case:** MUDT AI Learning Assistant and Management Platform (hybrid on-premises / cloud, Session 1 slides 5 and 8)
 **Review version:** v0.1 draft for team review (2026-10-30)
 
